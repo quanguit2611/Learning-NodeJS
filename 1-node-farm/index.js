@@ -1,0 +1,108 @@
+const fs = require("fs");
+const http = require("http");
+const url = require("url");
+
+const replaceTemplate = require('./modules/replaceTemplate');
+
+////////////////////////////////
+// FILES
+
+/* Synchronous way, blocking */
+//readFileSync dùng để đọc file
+// const textIn = fs.readFileSync('./txt/input.txt', 'utf-8');
+// console.log(textIn);
+
+//writeFileSync dùng để ghi file
+//ES6 + string bằng cách: `string + ${<variable_name>}`
+// const textOut = `This is what we know about the avocado: ${textIn}.\nCreated on ${Date.now()}`;
+// fs.writeFileSync('./txt/output.txt', textOut);
+// console.log('File written!');
+
+/* Asynchronous way, non-blocking */
+//hàm callback của readFile có 2 tham số (err, data)
+// fs.readFile('./txt/start.txt', 'utf-8', (err, data1) => {
+//     if(err) return console.log('ERROR');
+
+//     fs.readFile(`./txt/${data1}.txt`, 'utf-8', (err, data2) => {
+//         console.log(data2);
+//         fs.readFile('./txt/append.txt', 'utf-8', (err, data3) => {
+//             console.log(data3);
+
+//             fs.writeFile('./txt/final.txt',  `${data2}\n${data3}`,'utf-8', err => {
+//                 console.log('your file has been written');
+//             });
+//         });
+//     });
+// });
+
+// console.log('will read file');
+
+////////////////////////////////
+// SERVER và các chú thích về code
+
+//res.end() sẽ kết thúc request process và gửi response
+
+//lúc nào cũng phải gửi status code trước khi gửi response đi
+
+/*khi mỗi lần user gửi request thì lại phải đọc data 1 lần thì quá lãng phí,
+cho nên đọc 1 lần ở lúc đầu sau đó user route tới api thì chỉ cần trả data về sẽ tốt hơn
+=> đưa đoạn code đọc file lên top level và dùng đồng bộ để chỉ cần đọc 1 lần ngay từ đầu :D
+*/
+
+//dataObj lúc này là 1 array gồm 5 object từ file data.json
+
+// /{%PRODUCTNAME%}/g ghi như thế này sẽ tác động lên mọi thứ ở trong 2 dấu / /
+
+/* trong thực tế thì nên thay đổi biến đầu vào bằng 1 biến khác chứ không nên thay đổi trực tiếp 
+nên ở đây sử dụng biến output để thay đổi template*/
+
+/*import module replaceTemplate.js từ folder modules.js
+hàm replaceTemplate thay đổi các placeholder trong các file html template bằng data trong file data.json*/
+
+//import core module trước khi import module cá nhân
+
+
+const tempOverview = fs.readFileSync(`${__dirname}/templates/template-overview.html`, "utf-8");
+const tempCard = fs.readFileSync(`${__dirname}/templates/template-card.html`, "utf-8");
+const tempProduct = fs.readFileSync(`${__dirname}/templates/template-product.html`, "utf-8");
+
+const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, "utf-8");
+const dataObj = JSON.parse(data);
+
+const server = http.createServer((req, res) => {
+  const { query, pathname } = url.parse(req.url, true);
+
+  //Overview page
+  if (pathname === "/" || pathname === "/overview") {
+    res.writeHead(200, { "Content-type": "text/html" });
+
+    const cardsHtml = dataObj.map(el => replaceTemplate(tempCard, el)).join('');
+    const output = tempOverview.replace('{%PRODUCT_CARDS%}', cardsHtml);
+    res.end(output);
+
+    //Product page  
+  } else if (pathname === "/product") {
+    res.writeHead(200, { "Content-type": "text/html" });
+    const product = dataObj[query.id];
+    const output = replaceTemplate(tempProduct, product);
+    res.end(output);
+
+    //API  
+  } else if (pathname === "/api") {
+
+    res.writeHead(200, { "Content-type": "application/json" });
+    res.end(data);
+
+    //Not found  
+  } else {
+    res.writeHead(404, {
+      "Content-type": "text/html",
+      "my-own-header": "hello-world",
+    });
+    res.end("<h1>Page not found!</h1>");
+  }
+});
+
+server.listen(8000, "127.0.0.1", () => {
+  console.log("listening to requests on port 8000");
+});

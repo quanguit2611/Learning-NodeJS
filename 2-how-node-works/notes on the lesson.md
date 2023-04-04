@@ -92,3 +92,26 @@ _ Đối với các event thông thường trong 1 app nodejs thì chỉ cần l
 _ Đọc data bằng `const readable = fs.createReadStream()` load data lên server bằng `readable.pipe(res)` 
 
 _ Ngoại trừ trường hợp cần làm thủ công stream thì dùng pipe là tối ưu nhất
+
+### Import và Export module
+_ Có 2 cách export module:
+* Dùng module.exports = (parameters here) => { coding here ...}
+* Dùng trực tiếp object exports. Ví dụ: `exports.add = (a, b) => a + b;`
+
+_ Import module
+* Với module.exports:
+```
+const <module_name> = require('<module_directory>');
+const <variable_name> = new <module_name>();
+```
+
+* Với sử dụng trực tiếp exports:
+```
+const <module_name> = require('<module_directory>');
+```
+hoặc sử dụng trực tiếp tên function được định nghĩa với object exports
+```
+const { <exports_function1>, <exports_function2>} = require('<module_directory>');
+```
+
+_ Caching: khi require module, nó sẽ được cache lại, mỗi lần call mới sẽ lấy kết quả từ cache ra chứ không gọi mới nữa

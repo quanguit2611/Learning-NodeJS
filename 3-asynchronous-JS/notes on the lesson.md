@@ -30,4 +30,4 @@ _ Async/Await giúp code nhìn giống synch hơn nhưng vẫn giữ được t�
 
 _ function `async` tự động return promise; value mà ta return từ function `asych` là `resolve` của promise => sau đó nó là 1 promise mà ta dùng `await`
 
-_ Có thể đợi nhiều promise cùng 1 lúc bằng cách lưu các value cần promise vào các biến sau dùng `await.Promise.all([promise1, promise2, promise3, ...])`
+_ Có thể đợi nhiều promise cùng 1 lúc bằng cách lưu các value cần promise vào các biến sau đó dùng `await.Promise.all([promise1, promise2, promise3, ...])`

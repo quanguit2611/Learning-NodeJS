@@ -119,3 +119,76 @@ send(6)
 ```
 
 **=> Trường hợp này thì server không cần nhớ gì cả mà chỉ việc load data ở trang 6 cho client**
+
+## Xử lý các HTML method request
+
+_ Thay vì dùng Postman như trong bài giảng thì hoppscotch là tool online để test api
+
+_ Như đã đề cập ở trên, chỉ cần thay đổi method chứ không cần thay đổi url ta cũng có thể xử lý các method khác nhau với cùng 1 url. VD: 
+```
+app.get('/api/v1/tours', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    result: tours.length,
+    data: {
+      tours,
+    },
+  });
+});
+```
+
+```
+app.post('/api/v1/tours', (req, res) => {
+  //console.log(req.body);
+
+  const newId = tours[tours.length - 1].id + 1;
+  const newTour = Object.assign({ id: newId }, req.body);
+
+  tours.push(newTour);
+
+  fs.writeFile(
+    `${__dirname}/dev-data/data/tours-simple.json`,
+    JSON.stringify(tours),
+    (err) => {
+      res.status(201).json({
+        status: 'success',
+        data: {
+          tour: newTour,
+        },
+      });
+    }
+  );
+});
+```
+
+_ Khi url có tham số (ví dụ như GET 1 object với id riêng biệt) ta chỉ cần thêm `/:<parameter>` sau url. VD:  `'/api/v1/tours/:id'`
+
+Ta có thể yêu cầu nhiều parameter bằng cách tiếp tục thêm `/:<parameter>` vào sau url. VD: `'/api/v1/tours/:id/:x/:y'`. Viết như thế này thì bắt buộc ta phải viết đủ parameter của url tren browser nếu không server sẽ báo lỗi, để tránh tình trạng này ta thêm `?` vào sau mỗi parameter. VD: `'/api/v1/tours/:id?'`=> viết như thế này sẽ dù có hay không thì server cũng không báo lỗi
+
+_ Một số status code quen thuộc:
+
+* 200: OK
+* 201: Created
+* 204: No content
+
+## Refactor routes
+
+_ Sau khi đã hoàn thiện việc viết api hoàn chỉnh, ta bắt đầu refactor code để cho code dễ đọc, dễ hiểu và dễ chỉnh sửa, hoàn thiện hơn.
+
+1. Tách handler function bên trong route ra ngoài một function để sau đó export nó ra 1 file khác
+
+2. Sau khi đã tách xong thì ta gom các hành động (HTML method) của route đó vào 1 dòng code bằng `app.route()`. VD:
+
+```
+app.route('/api/v1/tours').get(getAllTours).post(createTour);
+```
+
+## Middleware
+
+_ Tất cả các function xảy ra từ lúc request được gửi tới lúc response được trả về gọi là middleware (kể cả các router)
+
+_ Tất cả các middleware mà ta sử dụng ở trong app được gọi là **middleware stack** và thứ tự trong middleware stack được xác định bằng thứ tự xuất hiện của nó trong đoạn code của chúng ta. Middleware xuất hiện trước được chạy trước và thực hiện tuần tự => **thứ tự middleware trong express là **rất quan trọng**
+
+_ Request-Response cycle là quá trình gọi request, thực thi tất cả các middleware theo thứ tự và gửi response. 
+
+_ Để sử dụng middleware dùng lệnh `app.use(<middleware_name>)`

@@ -192,3 +192,144 @@ _ Tất cả các middleware mà ta sử dụng ở trong app được gọi là
 _ Request-Response cycle là quá trình gọi request, thực thi tất cả các middleware theo thứ tự và gửi response. 
 
 _ Để sử dụng middleware dùng lệnh `app.use(<middleware_name>)`
+
+_ **Làm ơn đừng có quên `next();` khi tự viết middleware :D**
+
+### Tái cấu trúc code và tạo router riêng biệt cho mỗi resource
+
+_ Quy trình: 
+1. Nhận request từ file app.js
+2. Dựa vào các route, request sẽ đi tới các router tương ứng
+3. Dựa vào route và request, server sẽ thực hiện controller (handler function) tương ứng
+4. Cuối cùng thì response sẽ được gửi về cho client và kết thúc request-response cycle
+
+_ Tách thành 2 folder routes và controllers theo đúng mô hình MVC (sẽ đề cập ở các phần sau :v) với folder controllers chứa các hàm xử lý các HTML method request và folder routes chứa url để trỏ tới controller tương úng
+
+### Tách controller
+_ Việc tách controller thì có phần đơn giản hơn route một chút vì công việc chủ yếu ở đây là bỏ các handler function HTML method request vào `exports.<function>` để export các function này để router chỉ tới. VD:
+```
+const fs = require('fs');
+
+const tours = JSON.parse(
+  fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
+);
+
+//TOURS FUNCTION HANDLER
+exports.getAllTours = (req, res) => {
+  console.log(req.requestTime);
+
+  res.status(200).json({
+    status: 'success',
+    requestedAt: req.requestTime,
+    result: tours.length,
+    data: {
+      tours,
+    },
+  });
+};
+
+exports.getTour = (req, res) => {
+  console.log(req.params);
+
+  const id = req.params.id * 1; // convert req.params.id từ string sang number
+  const tour = tours.find((el) => el.id === id); //nếu không tìm thấy id phù hợp biến tour sẽ trở thành undefined
+
+  // if (id > tours.length) {
+  if (!tour) {
+    return res.status(404).json({
+      status: 'fail',
+      message: 'Invalid ID',
+    });
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      tour,
+    },
+  });
+};
+
+exports.createTour = (req, res) => {
+  //console.log(req.body);
+
+  const newId = tours[tours.length - 1].id + 1;
+  const newTour = Object.assign({ id: newId }, req.body);
+
+  tours.push(newTour);
+
+  fs.writeFile(
+    `${__dirname}/dev-data/data/tours-simple.json`,
+    JSON.stringify(tours),
+    (err) => {
+      res.status(201).json({
+        status: 'success',
+        data: {
+          tour: newTour,
+        },
+      });
+    }
+  );
+};
+
+exports.updateTour = (req, res) => {
+  if (req.params.id * 1 > tours.length) {
+    return res.status(404).json({
+      status: 'fail',
+      message: 'Invalid ID',
+    });
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      tour: '<Updated tour here...>',
+    },
+  });
+};
+
+exports.deleteTour = (req, res) => {
+  if (req.params.id * 1 > tours.length) {
+    return res.status(404).json({
+      status: 'fail',
+      message: 'Invalid ID',
+    });
+  }
+
+  res.status(204).json({
+    status: 'success',
+    data: null,
+  });
+};
+```
+
+### Tách route
+
+_ Import file controller.js tương ứng và import `express.Router();` để thực hiện việc routing cho app, cuối cùng là export file route.js để import vào app.js
+
+`const <router_name> = express.Router();`
+
+Thay vì dùng app.route() ta thay app bằng `<router_name>` mà ta vừa tạo. VD: 
+```
+const express = require('express');
+const tourController = require('./../controllers/tourController');
+
+const router = express.Router();
+
+router
+  .route('/')
+  .get(tourController.getAllTours)
+  .post(tourController.createTour);
+
+router
+  .route('/:id')
+  .get(tourController.getTour)
+  .patch(tourController.updateTour)
+  .delete(tourController.deleteTour);
+
+module.exports = router;
+```
+
+**Lưu ý là khi refactor tất nhiên sẽ có những bug như thiếu module, sai đường dẫn, chưa định nghĩa các variable như trước kia, ... nhưng cứ sửa từ từ là ok :D**
+
+**Trong thực tế thì ta nên export file app.js ra một main file mới là server.js, vì app.js sẽ chứa tất cả những gì liên quan tới express ở một file và những gì liên quan tới server ở một file riêng biệt khác (như config database, xử lý error, biến môi trường, ...)**

@@ -333,3 +333,11 @@ module.exports = router;
 **Lưu ý là khi refactor tất nhiên sẽ có những bug như thiếu module, sai đường dẫn, chưa định nghĩa các variable như trước kia, ... nhưng cứ sửa từ từ là ok :D**
 
 **Trong thực tế thì ta nên export file app.js ra một main file mới là server.js, vì app.js sẽ chứa tất cả những gì liên quan tới express ở một file và những gì liên quan tới server ở một file riêng biệt khác (như config database, xử lý error, biến môi trường, ...)**
+
+### Param middleware
+
+_ Là middleware chỉ chạy cho một số parameter nhất định -> khi url có parameter thì param middleware có parameter tương ứng mới được sử dụng. Như trong bài ta có parameter id để lấy dữ liệu cho 1 resource có id tương ứng
+
+_ Việc sử dụng param middleware giúp cho các HTML method function handler chỉ phải thực hiện công việc nó được yêu cầu (như trong bài là các hàm như getTour, getAllTours, ...) mà không lo tới việc validate parameter có gây ra lỗi gì hay không
+
+_ Ưu tiên sử dụng param middleware thay vì hàm javascript thông thường vì làm việc với middleware stack mới là phương châm hoạt động của express

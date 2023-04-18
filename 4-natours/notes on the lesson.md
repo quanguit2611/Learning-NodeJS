@@ -341,3 +341,11 @@ _ Là middleware chỉ chạy cho một số parameter nhất định -> khi url
 _ Việc sử dụng param middleware giúp cho các HTML method function handler chỉ phải thực hiện công việc nó được yêu cầu (như trong bài là các hàm như getTour, getAllTours, ...) mà không lo tới việc validate parameter có gây ra lỗi gì hay không
 
 _ Ưu tiên sử dụng param middleware thay vì hàm javascript thông thường vì làm việc với middleware stack mới là phương châm hoạt động của express
+
+### Chaining multiple middlewares
+
+_ Việc chain các middleware trong route thường để kiểm tra các thông tin trước khi thực hiện bước cuối cùng là thực hiện công việc của route đó để HTML method function handler chỉ phải thực hiện công việc như đúng cái tên của nó
+
+### Serving static files
+
+_ Để sử dụng static file trong express thì gõ lệnh ```app.use(express.static(<tên_đường_dẫn_file_tĩnh>));``` 

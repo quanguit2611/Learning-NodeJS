@@ -379,7 +379,7 @@ dotenv.config({ path: './config.env' });
 
 _ Database dạng hướng tài liệu (document-base)
 
-_ Mỗi database chứa các **colection** (giống như table bên sql)
+_ Mỗi database chứa các **collection** (giống như table bên sql)
 
 _ Mỗi collection chứa các **document** (giống như row bên sql)
 
@@ -425,7 +425,6 @@ Dùng Atlas để tạo project và database trên mạng (không lưu database 
 ![Choose free option and create your database](./notes-img/free%20database.png)
 
 6. Sau đó mongo sẽ dẫn tới trang quickstart để tạo user và thiết lập các địa chỉ ip được kết nối tới database vừa mới tạo
-
 **Lưu ý: lưu password và user lại vào file config.env để kết nối express app và mongodb**
 ![Create user for database](./notes-img/create%20user.png)
 ![Add IP address](./notes-img/add%20ip%20address.png)
@@ -454,7 +453,7 @@ Cách 1: chọn driver là node.js version 4.1 or later sau đó copy connection
 Cách 2: chọn driver là node.js nhưng version sẽ là 2.2.12 or later sau đó làm tương tự
 ![Cách thứ hai](./notes-img/choice%20no2.png)
 
-Sau khi đã có database url ta bắt đầu dùng mongoose để kết nối
+Sau khi đã có database url ta bắt đầu dùng mongoose để kết nối (trong ví dụ thì DB chính là database url)
 ```
 mongoose
   .connect(DB, {

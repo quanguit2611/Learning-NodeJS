@@ -425,7 +425,6 @@ Dùng Atlas để tạo project và database trên mạng (không lưu database 
 ![Choose free option and create your database](./notes-img/free%20database.png)
 
 6. Sau đó mongo sẽ dẫn tới trang quickstart để tạo user và thiết lập các địa chỉ ip được kết nối tới database vừa mới tạo
-
 **Lưu ý: lưu password và user lại vào file config.env để kết nối express app và mongodb**
 ![Create user for database](./notes-img/create%20user.png)
 ![Add IP address](./notes-img/add%20ip%20address.png)

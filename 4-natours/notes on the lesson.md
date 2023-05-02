@@ -349,3 +349,130 @@ _ Việc chain các middleware trong route thường để kiểm tra các thôn
 ### Serving static files
 
 _ Để sử dụng static file trong express thì gõ lệnh ```app.use(express.static(<tên_đường_dẫn_file_tĩnh>));``` 
+
+
+### Làm việc với Environment Variables
+
+Sử dụng Environment Variables để set các giá trị cho từng môi trường (dev, product,...)
+
+Trên terminal gõ : `npm install dotenv`
+
+Tạo file config.env để lưu các thông tin cần sử dụng. VD 
+```
+NODE_ENV=development
+PORT=3000
+DATABASE=mongodb://quang:<PASSWORD>@ac-h2yobxr-shard-00-00.iuqvijk.mongodb.net:27017,ac-h2yobxr-shard-00-01.iuqvijk.mongodb.net:27017,ac-h2yobxr-shard-00-02.iuqvijk.mongodb.net:27017/natours?ssl=true&replicaSet=atlas-rp6fyl-shard-0&authSource=admin&retryWrites=true&w=majority
+DATABASE_PASSWORD=tôi che như phim sex luôn chứ ở đó mà đòi thấy =))
+```
+
+Import file .env vào server 
+```
+const dotenv = require('dotenv');
+
+dotenv.config({ path: './config.env' });
+```
+
+Để truy cập tới các variable trong file env gõ: `process.env.<variable_name>`
+
+# MongoDB và mongoose
+## MongoDB
+
+_ Database dạng hướng tài liệu (document-base)
+
+_ Mỗi database chứa các **colection** (giống như table bên sql)
+
+_ Mỗi collection chứa các **document** (giống như row bên sql)
+
+### Những key feature của mongoDB
+
+_ Document based: lưu data trong các document (data lưu dưới dạng cặp field-value)
+
+_ Scalable (khả năng mở rộng): dễ lưu trữ data khi số lượng user và data tăng lên
+
+_ Flexible (linh động): document không yêu cầu data schema nên muốn lưu data như thế nào cũng được và cũng dễ thay đổi dữ liệu
+
+_ Performant (hoạt động hiệu quả): các tính năng như embedded data model, indexing, sharding, flexible documents, native duplication, ... giúp mongo
+
+_ Open source và free cho người mới sử dụng
+
+### So sánh giữa data dược lưu dưới dạng document và trong database dạng quan hệ
+
+Hình bên dưới là so sánh giữa 2 bên
+
+![Document vs relational database](./notes-img/document%20vs%20relational%20database.png)
+
+### Mongo Compass
+
+Compass là UI thay thế cho terminal khi làm việc với mongoDB. Phần cài đặt khá là đơn giản nên là khỏi note :D (nối mongoose với app express mới bú (✖╭╮✖) )
+
+### Mongo Atlas
+
+Dùng Atlas để tạo project và database trên mạng (không lưu database ở local):
+
+1. Tạo tài khoản trên atlas (đăng nhập bằng google không tới 30s)
+
+2. Sau khi tạo tài khoản sẽ có trang project hiện lên, nhấn vào nút create project bên tay phải màn hình
+![Create new project](./notes-img/create%20new%20project.png)
+
+3. Sau đó tạo tên project, bỏ qua bước thêm member (vì làm éo gì có ai :D) và nhấn Create Project
+![Name the project](./notes-img/name%20the%20project.png)
+![Create project](./notes-img/create%20project.png)
+
+4. Sau khi tạo xong project xong, user sẽ được chuyển tới trang tạo database (hay lúc trước gọi là cluster)
+![Create database](./notes-img/create%20database.png)
+
+5. Sau đó user sẽ được chuyển tới trang setup cấu hình cho database của mình (nhớ chọn free không mất tiền oan mình không chịu trách nhiệm đâu à nha) và nhấn create
+![Choose free option and create your database](./notes-img/free%20database.png)
+
+6. Sau đó mongo sẽ dẫn tới trang quickstart để tạo user và thiết lập các địa chỉ ip được kết nối tới database vừa mới tạo
+
+**Lưu ý: lưu password và user lại vào file config.env để kết nối express app và mongodb**
+![Create user for database](./notes-img/create%20user.png)
+![Add IP address](./notes-img/add%20ip%20address.png)
+
+### Mongoose
+
+Mongoose là thư viện Object Data Modeling của MongoDB và Node.js và có mức trừu tượng cao hơn driver MongoDB (na ná Node.js với Express.js)
+
+Các tính năng: tạo schema để model data và tạo quan hệ, validate data dễ dàng, API truy vấn đơn giản, cung cấp các middleware, ...
+
+Mongoose Schema: dùng để model data bằng cách mô tả cấu trúc dữ liệu, các giá trị mặc định và các validator
+
+Mongoose Model: một wrapper cho schema, dùng cho các thao tác CRUD với dữ liệu
+
+**Kết nối database với mongoose**
+
+1. Ở trang chủ của project, nhấn connect
+![Connect database](./notes-img/connect%20db.png)
+
+2. Nhấn vào drivers
+![Connect via drivers](./notes-img/connect%20via%20drivers.png)
+
+3. Vì chỗ này bug nên sẽ chia làm 2 cách, nếu cách thứ nhất chạy rồi thì thôi nhưng nếu không chạy thì chuyển qua cách thứ 2 <br>
+Cách 1: chọn driver là node.js version 4.1 or later sau đó copy connection string và dán nó vào biến lưu database url (hoặc như trong bài là lưu vào biến môi trường ở file config)
+![Cách thứ nhất](./notes-img/choice%20no1.png)
+Cách 2: chọn driver là node.js nhưng version sẽ là 2.2.12 or later sau đó làm tương tự
+![Cách thứ hai](./notes-img/choice%20no2.png)
+
+Sau khi đã có database url ta bắt đầu dùng mongoose để kết nối
+```
+mongoose
+  .connect(DB, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+  })
+  .then(() => {
+    console.log('DB connection successfully established');
+  })
+  .catch((err) => {
+    console.log('DB connection error');
+    console.log(err);
+  });
+```
+
+Console hiện ra dòng `DB connection successfully established` là thành công (còn không là "cook")
+
+
+
+

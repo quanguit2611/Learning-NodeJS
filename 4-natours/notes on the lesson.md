@@ -379,7 +379,7 @@ dotenv.config({ path: './config.env' });
 
 _ Database dạng hướng tài liệu (document-base)
 
-_ Mỗi database chứa các **colection** (giống như table bên sql)
+_ Mỗi database chứa các **collection** (giống như table bên sql)
 
 _ Mỗi collection chứa các **document** (giống như row bên sql)
 

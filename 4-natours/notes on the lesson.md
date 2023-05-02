@@ -453,7 +453,7 @@ Cách 1: chọn driver là node.js version 4.1 or later sau đó copy connection
 Cách 2: chọn driver là node.js nhưng version sẽ là 2.2.12 or later sau đó làm tương tự
 ![Cách thứ hai](./notes-img/choice%20no2.png)
 
-Sau khi đã có database url ta bắt đầu dùng mongoose để kết nối
+Sau khi đã có database url ta bắt đầu dùng mongoose để kết nối (trong ví dụ thì DB chính là database url)
 ```
 mongoose
   .connect(DB, {

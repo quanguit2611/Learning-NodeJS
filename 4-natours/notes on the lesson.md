@@ -362,7 +362,7 @@ Tạo file config.env để lưu các thông tin cần sử dụng. VD
 NODE_ENV=development
 PORT=3000
 DATABASE=mongodb://quang:<PASSWORD>@ac-h2yobxr-shard-00-00.iuqvijk.mongodb.net:27017,ac-h2yobxr-shard-00-01.iuqvijk.mongodb.net:27017,ac-h2yobxr-shard-00-02.iuqvijk.mongodb.net:27017/natours?ssl=true&replicaSet=atlas-rp6fyl-shard-0&authSource=admin&retryWrites=true&w=majority
-DATABASE_PASSWORD=tôi che như phim sex luôn chứ ở đó mà đòi thấy =))
+DATABASE_PASSWORD=password
 ```
 
 Import file .env vào server 
@@ -403,7 +403,7 @@ Hình bên dưới là so sánh giữa 2 bên
 
 ### Mongo Compass
 
-Compass là UI thay thế cho terminal khi làm việc với mongoDB. Phần cài đặt khá là đơn giản nên là khỏi note :D (nối mongoose với app express mới bú (✖╭╮✖) )
+Compass là UI thay thế cho terminal khi làm việc với mongoDB. Phần cài đặt khá là đơn giản nên là khỏi note :D. Mongo Compass cho phép người dùng thêm document trực tiếp từ interface nên khá là tiện.
 
 ### Mongo Atlas
 
@@ -470,8 +470,316 @@ mongoose
   });
 ```
 
-Console hiện ra dòng `DB connection successfully established` là thành công (còn không là "cook")
+Console hiện ra dòng `DB connection successfully established` là thành công !
 
+## Cấu trúc code theo mô hình MVC
+### Mô hình MVC
+Hình dưới đây mô tả cấu trúc MVC lấy ví dụ là app của chúng ta
 
+![MVC architecture in our code](./notes-img/MVC%20architecture.png)
 
+1. Sau khi client gửi request, request sẽ đi qua router (mỗi router dùng để xủ lý 1 resource riêng biệt). 
 
+2. Router sẽ đưa request tới handler function để thực hiện đúng yêu cầu của request trong controller (mỗi controller cũng chỉ xử lý 1 resource). 
+
+3. Sau đó, tùy vào request mà controller sẽ phải tương tác với model, ví dụ lấy document từ mongodb hay tạo document mới (mỗi model cũng sẽ chỉ đại diện cho 1 resource). 
+
+4. Sau khi lấy xong dữ liệu, controller có thể gửi response về cho client. Trong trường hợp cần render website, sau khi lấy xong dữ liệu controller sẽ chọn 1 template và truyền data vào trong template đó và template được render sẽ được controller gửi về cho client. 
+Lớp view thường chứa 1 view template cho 1 page 
+
+### Application logic vs Business logic
+Mục đích của việc áp dụng mô hình MVC là để tách **Application logic** và **Business logic**
+
+Hình bên dưới là một so sánh giữa 2 kiểu logic chúng ta cần xử lý khi code
+![Application logic vs Business logic](./notes-img/Application%20logic%20vs%20Business%20logic.png)
+
+Hiểu một cách đơn giản thì application logic là kiểu xử lý logic để cho app **CHẠY ĐƯỢC**,còn business logic là kiểu xử lý logic liên quan tới chuyện kinh doanh
+
+Application logic quan tâm nhiều đến việc quản lý request-response và các vấn đề về mặt kĩ thuật (technical). Application logic là cầu nối giữa Model và View. Ví dụ: show tour và bán tour du lịch
+
+Business logic giải quyết các vấn đề về chuyện kinh doanh, liên quan trực tiếp tới những gì mà doanh nghiệp cần. Ví dụ: tạo tour mới trong database, kiểm tra password của user, validate dữ liệu nhập vào, ...
+
+Tất nhiên chuyện phân tách 2 kiểu vấn đề logic này hoàn toàn là bất khả thi nhưng tốt nhất là để controller xử lý các vấn đề về application logic và model xử lý các vấn đề về business logic.
+
+Quy tắc **fat model/thin controller**: đẩy các vấn đề cần giải quyết nhiều hết mức có thể cho model để model xử lý các business logic và dùng controller với mục đích chủ yếu là quản lý các request và response cho app
+
+## Tạo document từ app (không dùng Compass)
+Từ mô hình MVC ở trên, app của chúng ta nên có 1 folder riêng để lưu model cho các resource. VD: resource tour được lưu trong file tourModels.js ở folder models
+```
+const mongoose = require('mongoose');
+
+const tourSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'A tour must have a name'],
+    unique: true,
+    trim: true,
+  },
+  duration: {
+    type: Number,
+    required: [true, 'A tour must have a duration'],
+  },
+  maxGroupSize: {
+    type: Number,
+    required: [true, 'A tour must have a group size'],
+  },
+  difficulty: {
+    type: String,
+    required: [true, 'A tour must have a difficulty'],
+  },
+  ratingsAverage: {
+    type: Number,
+    default: 4.5,
+  },
+  ratingsQuantity: {
+    type: Number,
+    default: 0,
+  },
+  price: {
+    type: Number,
+    required: [true, 'A tour must have a price'],
+  },
+  priceDiscount: Number,
+  summary: {
+    type: String,
+    trim: true,
+    required: [true, 'A tour must have a description'],
+  },
+  description: {
+    type: String,
+    trim: true,
+  },
+  imageCover: {
+    type: String,
+    required: [true, 'A tour must have a cover image'],
+  },
+  images: [String],
+  createdAt: {
+    type: Date,
+    default: Date.now(),
+  },
+  startDates: [Date],
+});
+
+const Tour = mongoose.model('Tour', tourSchema);
+
+module.exports = Tour;
+```
+
+Như đã đề cập ở phần Mongoose, Schema là cách ta định hình cấu trúc dữ liệu cho model. Để tạo schema ta gõ: 
+```
+const <Schema_name> = new mongoose.Schema({
+  field1: {
+    options: ...
+  },
+  field2: {
+    options: ...
+  }
+})
+```
+
+## Các thao tác CRUD với Document
+
+Để nhắc lại thì các thao tác CRUD sẽ được áp dụng ở controller. Ví dụ sau là từ controller của tour (nằm trong file tourController.js)
+
+1. Create
+```
+exports.createTour = async (req, res) => {
+  try {
+    // const newTour = new Tour({});
+    // newTour.save();
+
+    const newTour = await Tour.create(req.body);
+
+    res.status(201).json({
+      status: 'success',
+      data: {
+        tour: newTour,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: err,
+    });
+  }
+};
+```
+
+**Một số chú thích về code:**
+
+_ Để tạo document mới gõ: `<Model_name>.create()`. Hàm `create()` sẽ trả về promise nên để có thể truy cập tới file document ta phải dùng `.then()` phía sau hoặc **dùng async/await**
+
+_ Và tất nhiên là khi sử dụng async/await thì phải có try catch để bắt error
+
+2. Read
+
+Read all:
+```
+exports.getAllTours = async (req, res) => {
+  try {
+    const tours = await Tour.find()
+
+    // SEND RESPONSE
+    res.status(200).json({
+      status: 'success',
+      requestedAt: req.requestTime,
+      result: tours.length,
+      data: {
+        tours,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: err,
+    });
+  }
+};
+```
+Tương tự phía trên thì `find()` cũng trả về promise 
+
+Read one:
+```
+exports.getTour = async (req, res) => {
+  try {
+    const tour = await Tour.findById(req.params.id);
+    //Tour.findOne({ _id: req.params.id })
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        tour,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: err,
+    });
+  }
+};
+```
+
+3. Update
+
+```
+exports.updateTour = async (req, res) => {
+  try {
+    const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        tour,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: 'Invalid data sent',
+    });
+  }
+};
+```
+
+4. Delete
+
+```
+exports.deleteTour = async (req, res) => {
+  try {
+    await Tour.findByIdAndDelete(req.params.id);
+
+    res.status(204).json({
+      status: 'success',
+      data: null,
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'fail',
+      message: 'Invalid data sent',
+    });
+  }
+};
+```
+
+**Một thói quen tốt là khi thực hiện delete thì không nên lưu gì cả**
+
+## Viết script để load data từ file json local lên mongodb
+Script này là hoàn toàn độc lập với app và ta chạy nó trên terminal
+
+```
+const fs = require('fs');
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+const Tour = require('../../models/tourModel');
+
+dotenv.config({ path: './config.env' });
+
+const DB = process.env.DATABASE.replace(
+  '<PASSWORD>',
+  process.env.DATABASE_PASSWORD
+);
+
+mongoose
+  .connect(DB, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+  })
+  .then(() => {
+    console.log('DB connection successfully established');
+  })
+  .catch((err) => {
+    console.log('DB connection error');
+    console.log(err);
+  });
+
+//READ JSON FILE AND CONVERT TO JAVASCRIPT OBJECT
+const tours = JSON.parse(
+  fs.readFileSync(`${__dirname}/tours-simple.json`, 'utf-8')
+);
+
+//IMPORT DATA TO DATABASE
+const importData = async () => {
+  try {
+    await Tour.create(tours);
+    console.log('Data successfully loaded');
+  } catch (error) {
+    console.log(error);
+  }
+  process.exit();
+};
+
+//DETELE ALL DATA FROM DB
+const deleteData = async () => {
+  try {
+    await Tour.deleteMany();
+    console.log('Data successfully deleted');
+  } catch (error) {
+    console.log(error);
+  }
+  process.exit();
+};
+
+if (process.argv[2] === '--import') {
+  importData();
+} else if (process.argv[2] === '--delete') {
+  deleteData();
+}
+
+console.log(process.argv);
+```
+
+Ta chạy script này trên terminal và dùng `process.argv` để chọn option là import hoặc delete data. `process.argv` trả một array chứa các argument vậy nên khi ta thêm argument `--import` hoặc `--delete` thì script sẽ chạy function tương ứng
+
+Ở terminal ta gõ đoạn code sau:
+
+`node dev-data/data/import-dev-data.js --import` -> nhập
+
+hoặc
+
+`node dev-data/data/import-dev-data.js --delete` -> xóa

@@ -783,3 +783,192 @@ Ta chạy script này trên terminal và dùng `process.argv` để chọn optio
 hoặc
 
 `node dev-data/data/import-dev-data.js --delete` -> xóa
+
+## Thêm các chức năng cho API: filter, sort, limit fields, paginate
+
+Đoạn code sau là khi ta thêm các chức năng này vào controller
+```
+exports.getAllTours = async (req, res) => {
+  try {
+    console.log(req.query);
+
+    // BUILD QUERY
+    // 1a) Filtering
+
+    const queryObj = { ...req.query };
+    const excludedFields = ['page', 'sort', 'limit', 'fields'];
+    excludedFields.forEach((field) => delete queryObj[field]);
+
+    // 1b) Advance filtering
+
+    let queryStr = JSON.stringify(queryObj);
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+    console.log(JSON.parse(queryStr));
+
+    let query = Tour.find(JSON.parse(queryStr));
+
+    // 2) Sorting
+
+    if (req.query.sort) {
+      const sortBy = req.query.sort.split(',').join(' ');
+      query = query.sort(sortBy);
+    } else {
+      query = query.sort('-createdAt _id');
+    }
+
+    // 3) Field limiting
+
+    if (req.query.fields) {
+      const fields = req.query.fields.split(',').join(' ');
+      query = query.select(fields);
+    } else {
+      query = query.select('-__v');
+    }
+
+    // 4) Pagination
+
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.limit * 1 || 100;
+    const skip = (page - 1) * limit;
+
+    // ex: page=2&limit=10
+    query = query.skip(skip).limit(limit);
+
+    if (req.query.page) {
+       const numTours = await Tour.countDocuments();
+       if (skip >= numTours) throw new Error('This page does not exist');
+    }
+
+    // EXECUTE QUERY
+    /* According to our class definition: 
+    1. query is the mongoose query hence Tour.find()
+    2. queryString is the express string hence req.query  */
+    const features = new APIFeatures(Tour.find(), req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+    const tours = await features.query;
+
+    // SEND RESPONSE
+    res.status(200).json({
+      status: 'success',
+      requestedAt: req.requestTime,
+      result: tours.length,
+      data: {
+        tours,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: err,
+    });
+  }
+};
+```
+
+Sau khi code chạy không có lỗi, ta bắt đầu refactor code để tái sử dụng các function, trong trường hợp này là file apiFeatures.js lưu ở thư mục utils
+
+Code apiFeatures.js
+```
+class APIFeatures {
+  constructor(query, queryString) {
+    //query : mongoose query, queryString : express query string
+    this.query = query;
+    this.queryString = queryString;
+  }
+
+  filter() {
+    // BUILD QUERY
+    // 1a) Filtering
+    const queryObj = { ...this.queryString };
+    const excludedFields = ['page', 'sort', 'limit', 'fields'];
+    excludedFields.forEach((field) => delete queryObj[field]);
+
+    // 1b) Advance filtering
+    let queryStr = JSON.stringify(queryObj);
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+
+    this.query = this.query.find(JSON.parse(queryStr));
+
+    return this;
+  }
+
+  sort() {
+    // 2) Sorting
+    if (this.queryString.sort) {
+      const sortBy = this.queryString.sort.split(',').join(' ');
+      this.query = this.query.sort(sortBy);
+    } else {
+      this.query = this.query.sort('-createdAt _id');
+    }
+
+    return this;
+  }
+
+  limitFields() {
+    // 3) Field limiting
+    if (this.queryString.fields) {
+      const fields = this.queryString.fields.split(',').join(' ');
+      this.query = this.query.select(fields);
+    } else {
+      this.query = this.query.select('-__v');
+    }
+
+    return this;
+  }
+
+  paginate() {
+    // 4) Pagination
+    const page = this.queryString.page * 1 || 1;
+    const limit = this.queryString.limit * 1 || 100;
+    const skip = (page - 1) * limit;
+
+    // ex: page=2&limit=10
+    this.query = this.query.skip(skip).limit(limit);
+
+    return this;
+  }
+}
+
+module.exports = APIFeatures;
+```
+
+Việc refactor code như thế này giúp việc kiểm soát code dễ dàng hơn và code nhìn cũng sẽ clean hơn rất nhiều
+
+```
+const APIFeatures = require('../utils/apiFeatures');
+
+exports.getAllTours = async (req, res) => {
+  try {
+    console.log(req.query);
+
+    // EXECUTE QUERY
+    /* According to our class definition: 
+    1. query is the mongoose query hence Tour.find()
+    2. queryString is the express string hence req.query  */
+    const features = new APIFeatures(Tour.find(), req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+    const tours = await features.query;
+
+    // SEND RESPONSE
+    res.status(200).json({
+      status: 'success',
+      requestedAt: req.requestTime,
+      result: tours.length,
+      data: {
+        tours,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: err,
+    });
+  }
+};
+```
